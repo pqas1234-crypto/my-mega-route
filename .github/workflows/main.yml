@@ -9,25 +9,33 @@ jobs:
         with:
           channel: 'stable'
       
-      - name: Configure and Build
+      - name: Hard-Fix and Build
+        # 這裡設定全域變數，Mapbox 外掛會優先讀取這些名稱
+        env:
+          SDK_REGISTRY_TOKEN: pk.placeholder
+          MAPBOX_DOWNLOADS_TOKEN: sk.placeholder
+          MAPBOX_ACCESS_TOKEN: pk.placeholder
         run: |
-          # A. 強制重建結構
+          # A. 初始化地基
           flutter create .
           
-          # B. 解決 AGP 9 相容性問題 (關閉新版 DSL 限制)
+          # B. 寫入 gradle.properties 強制關閉 AGP 9 的嚴格檢查
           echo "android.defaults.buildfeatures.buildconfig=true" >> android/gradle.properties
           echo "android.nonTransitiveRClass=false" >> android/gradle.properties
           echo "android.nonFinalResIds=false" >> android/gradle.properties
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
           
-          # C. 注入 Mapbox 虛擬 Token (避開編譯錯誤)
-          # 注意：若您的 App 需要地圖顯示，請之後在程式碼中填入真實 Token
-          mkdir -p android/app/src/main/res/values
-          echo '<resources><string name="mapbox_access_token">pk.placeholder</string></resources>' > android/app/src/main/res/values/developer-config.xml
+          # C. 針對 Mapbox GL 的特殊處理：建立 gradle 初始化腳本
+          # 這會強行在 Gradle 啟動時塞入 Token
+          mkdir -p ~/.gradle
+          echo "allprojects { project.ext.set('SDK_REGISTRY_TOKEN', 'pk.placeholder') }" > ~/.gradle/init.gradle
           
-          # D. 開始編譯
+          # D. 執行編譯 (加上無視圖標錯誤參數)
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
           
+          # E. 移動成品
           mkdir -p /output
           cp build/app/outputs/flutter-apk/app-release.apk /output/megaroute.apk
           
