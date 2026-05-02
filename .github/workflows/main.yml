@@ -8,16 +8,19 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Build and Repair
+      
+      - name: Force Flutter Upgrade and Build
         run: |
-          # 修復 Gradle 版本
-          find . -name "build.gradle" -exec sed -i 's/com.android.tools.build:gradle:[0-9.]*/com.android.tools.build:gradle:8.0.0/g' {} +
+          # 在雲端強制升級專案結構
+          flutter create . --force
           flutter pub get
           flutter build apk --release
+          
           mkdir -p /output
           cp build/app/outputs/flutter-apk/app-release.apk /output/megaroute.apk
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: megaroute-app-file
+          name: megaroute-final-apk
           path: output/megaroute.apk
