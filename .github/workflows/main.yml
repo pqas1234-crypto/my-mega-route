@@ -9,10 +9,10 @@ jobs:
         with:
           channel: 'stable'
       
-      - name: Force Flutter Upgrade and Build
+      - name: Force Flutter Structure Sync
         run: |
-          # 在雲端強制升級專案結構
-          flutter create . --force
+          # 移除 --force 參數，直接在當前目錄重建結構
+          flutter create .
           flutter pub get
           flutter build apk --release
           
