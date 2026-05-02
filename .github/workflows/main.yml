@@ -9,12 +9,24 @@ jobs:
         with:
           channel: 'stable'
       
-      - name: Force Flutter Structure Sync
+      - name: Configure and Build
         run: |
-          # 移除 --force 參數，直接在當前目錄重建結構
+          # A. 強制重建結構
           flutter create .
+          
+          # B. 解決 AGP 9 相容性問題 (關閉新版 DSL 限制)
+          echo "android.defaults.buildfeatures.buildconfig=true" >> android/gradle.properties
+          echo "android.nonTransitiveRClass=false" >> android/gradle.properties
+          echo "android.nonFinalResIds=false" >> android/gradle.properties
+          
+          # C. 注入 Mapbox 虛擬 Token (避開編譯錯誤)
+          # 注意：若您的 App 需要地圖顯示，請之後在程式碼中填入真實 Token
+          mkdir -p android/app/src/main/res/values
+          echo '<resources><string name="mapbox_access_token">pk.placeholder</string></resources>' > android/app/src/main/res/values/developer-config.xml
+          
+          # D. 開始編譯
           flutter pub get
-          flutter build apk --release
+          flutter build apk --release --no-tree-shake-icons
           
           mkdir -p /output
           cp build/app/outputs/flutter-apk/app-release.apk /output/megaroute.apk
