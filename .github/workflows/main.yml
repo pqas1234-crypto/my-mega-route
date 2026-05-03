@@ -9,31 +9,32 @@ jobs:
         with:
           channel: 'stable'
       
-      - name: Ultimate Fix and Build
+      - name: Ultimate Compatibility Fix
         env:
           SDK_REGISTRY_TOKEN: pk.placeholder
         run: |
-          # A. 初始化地基
+          # A. 初始化專案與獲取依賴
           flutter create .
           flutter pub get
           
-          # B. 【關鍵修正】強制幫 mapbox_gl 套件補上缺失的 namespace
-          # 這行會自動在快取目錄中找到該套件的 build.gradle 並注入命名空間
-          MAPBOX_PATH=
-          if [ -d "" ]; then
-            sed -i '/android {/a \    namespace "com.mapbox.mapboxgl"' "/android/build.gradle"
-            echo "Successfully patched mapbox_gl namespace"
+          # B. 【核心修正】動態注入 Namespace 到 mapbox_gl
+          # 我們直接去 pub 快取中找到套件路徑並修改其 build.gradle
+          PKG_PATH=
+          echo "Targeting package at: \"
+          if [ -d "\" ]; then
+            sed -i '/android {/a \    namespace "com.mapbox.mapboxgl"' "\/android/build.gradle"
+            echo "Successfully injected namespace into mapbox_gl"
           fi
           
-          # C. 解決 AGP 8+ 相容性與 Token 問題
+          # C. 環境參數調整 (解決 AGP 8+ 的嚴格檢查)
           echo "android.defaults.buildfeatures.buildconfig=true" >> android/gradle.properties
           mkdir -p ~/.gradle
           echo "allprojects { project.ext.set('SDK_REGISTRY_TOKEN', 'pk.placeholder') }" > ~/.gradle/init.gradle
           
-          # D. 執行編譯
+          # D. 執行編譯 (略過圖標檢查以提速)
           flutter build apk --release --no-tree-shake-icons
           
-          # E. 移動成品
+          # E. 整理產出物
           mkdir -p /output
           cp build/app/outputs/flutter-apk/app-release.apk /output/megaroute.apk
           
