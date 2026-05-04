@@ -10,12 +10,46 @@ jobs:
           channel: 'stable'
       - name: Force Clean and Build
         run: |
+          # A. 先初始化專案結構
           flutter create --overwrite .
-          flutter pub cache clean --force
+          
+          # B. 強制寫入我們的地圖程式碼 (覆蓋掉預設的計數器)
+          cat <<EOF > lib/main.dart
+          import 'package:flutter/material.dart';
+          import 'package:flutter_map/flutter_map.dart';
+          import 'package:latlong2/latlong2.dart';
+
+          void main() => runApp(const MaterialApp(home: MegaRouteApp()));
+
+          class MegaRouteApp extends StatelessWidget {
+            const MegaRouteApp({super.key});
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                appBar: AppBar(title: const Text('MegaRoute Map')),
+                body: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: LatLng(25.0330, 121.5654),
+                    initialZoom: 13.0,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.megaroute_app',
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+          EOF
+          
+          # C. 執行編譯
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
           mkdir -p output
           cp build/app/outputs/flutter-apk/app-release.apk output/megaroute.apk
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
