@@ -1,4 +1,4 @@
-﻿name: MegaRoute Auto Build
+﻿name: MegaRoute Auto Build (FlutterMap)
 on: [push]
 jobs:
   build:
@@ -9,33 +9,18 @@ jobs:
         with:
           channel: 'stable'
       
-      - name: Force Patch and Build
-        env:
-          SDK_REGISTRY_TOKEN: pk.placeholder
+      - name: Build APK
         run: |
-          # 初始化
+          # 這些指令會在 GitHub 的伺服器上跑，那裡有環境，所以不會報錯
           flutter create .
           flutter pub get
-          
-          # 核心修正：全域搜索並注入 Namespace
-          # 我們搜尋所有名為 build.gradle 的檔案並在 android 區塊注入
-          find /home/runner/.pub-cache -name "build.gradle" -exec sed -i '/android {/a \    namespace "com.mapbox.mapboxgl"' {} +
-          echo Patch attempted on all cache files
-          
-          # 編譯配置
-          echo "android.defaults.buildfeatures.buildconfig=true" >> android/gradle.properties
-          mkdir -p ~/.gradle
-          echo "allprojects { project.ext.set('SDK_REGISTRY_TOKEN', 'pk.placeholder') }" > ~/.gradle/init.gradle
-          
-          # 執行編譯
           flutter build apk --release --no-tree-shake-icons
           
-          # 整理產出物
           mkdir -p output
           cp build/app/outputs/flutter-apk/app-release.apk output/megaroute.apk
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: megaroute-final-apk
+          name: megaroute-flutter-map-apk
           path: output/megaroute.apk

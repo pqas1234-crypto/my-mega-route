@@ -1,10 +1,42 @@
 name: megaroute_app
-description: MegaRoute App
-publish_to: 'none'
+description: "A new Flutter project for route planning and map display."
+
+# 防止專案被意外發布到 pub.dev
+publish_to: 'none' 
+
 version: 1.0.0+1
+
 environment:
   sdk: '>=3.0.0 <4.0.0'
+
 dependencies:
   flutter:
     sdk: flutter
-  mapbox_gl: ^0.16.0
+
+  # --- 地圖核心套件 ---
+  # 純 Dart 開發的地圖引擎，不依賴原生 SDK，編譯最穩
+  flutter_map: ^7.0.2
+  
+  # 處理地圖經緯度座標的必備工具
+  latlong2: ^0.9.1
+
+  # (選填) 如果你需要獲取使用者當前位置，可以加入這個
+  geolocator: ^13.0.1
+
+  # --- 其他 UI 套件 ---
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  # 程式碼品質檢查
+  flutter_lints: ^3.0.0
+
+flutter:
+  # 使用 Material Design 3 介面
+  uses-material-design: true
+
+  # 如果你有圖片資源，請在這裡解開註解並列出路徑
+  # assets:
+  #   - assets/images/
