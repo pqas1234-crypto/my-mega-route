@@ -14,8 +14,8 @@ class MegaRouteApp extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('MegaRoute Map')),
       body: FlutterMap(
-        options: const MapOptions(
-          initialCenter: LatLng(25.0330, 121.5654), // 台北 101
+        options: MapOptions(
+          initialCenter: LatLng(25.0330, 121.5654),
           initialZoom: 13.0,
         ),
         children: [

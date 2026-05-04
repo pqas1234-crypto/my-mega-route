@@ -8,9 +8,10 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Build APK
+      - name: Force Clean and Build
         run: |
-          flutter create .
+          flutter create --overwrite .
+          flutter pub cache clean --force
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
           mkdir -p output
