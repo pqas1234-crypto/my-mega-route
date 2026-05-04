@@ -17,32 +17,16 @@ jobs:
           flutter create .
           flutter pub get
           
-          # B. 【核心修正】改用 find 指令全域搜索 mapbox_gl
-          echo "Searching for mapbox_gl source..."
-          MAPBOX_DIR=
+          # B. 直接對已知路徑注入 Namespace (不使用變數以避免語法報錯)
+          # 這是從報錯 Log 中提取的絕對路徑
+          TARGET_FILE="/home/runner/.pub-cache/hosted/pub.dev/mapbox_gl-0.16.0/android/build.gradle"
           
-          if [ -z "\" ]; then
-            # 如果 find 找不到，嘗試直接指定常見路徑
-            MAPBOX_DIR="/home/runner/.pub-cache/hosted/pub.dev/mapbox_gl-0.16.0"
-          fi
+          echo "Applying patch to \"
           
-          echo "Target Directory: \"
+          # 檢查檔案是否存在，存在就直接用 sed 插入
+          [ -f "\" ] && sed -i '/android {/a \    namespace "com.mapbox.mapboxgl"' "\" && echo "Patch applied!"
           
-          # 檢查 build.gradle 是否存在並注入 namespace
-          GRADLE_FILE="\/android/build.gradle"
-          if [ -f "\" ]; then
-            # 先檢查是否已經注入過，避免重複注入
-            if ! grep -q "namespace" "\"; then
-              sed -i '/android {/a \    namespace "com.mapbox.mapboxgl"' "\"
-              echo "Patch successfully injected into \"
-            else
-              echo "Namespace already exists, skipping patch."
-            fi
-          else
-            echo "ERROR: Could not find build.gradle at \"
-          fi
-          
-          # C. 編譯配置與 Token
+          # C. 編譯配置與環境變數
           echo "android.defaults.buildfeatures.buildconfig=true" >> android/gradle.properties
           mkdir -p ~/.gradle
           echo "allprojects { project.ext.set('SDK_REGISTRY_TOKEN', 'pk.placeholder') }" > ~/.gradle/init.gradle
@@ -50,7 +34,7 @@ jobs:
           # D. 執行編譯
           flutter build apk --release --no-tree-shake-icons
           
-          # E. 成品搬運
+          # E. 整理產出物
           mkdir -p output
           cp build/app/outputs/flutter-apk/app-release.apk output/megaroute.apk
           
