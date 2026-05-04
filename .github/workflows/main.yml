@@ -1,4 +1,4 @@
-﻿name: MegaRoute Auto Build (FlutterMap)
+﻿name: MegaRoute Build
 on: [push]
 jobs:
   build:
@@ -8,19 +8,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      
       - name: Build APK
         run: |
-          # 這些指令會在 GitHub 的伺服器上跑，那裡有環境，所以不會報錯
           flutter create .
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
-          
           mkdir -p output
           cp build/app/outputs/flutter-apk/app-release.apk output/megaroute.apk
-          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: megaroute-flutter-map-apk
+          name: megaroute-apk
           path: output/megaroute.apk
