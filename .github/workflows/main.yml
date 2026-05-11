@@ -8,12 +8,34 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Force Clean and Build
+      - name: Rebuild and Patch
         run: |
-          # A. 先初始化專案結構
+          # 1. 先初始化專案結構 (這會產生預設的 pubspec.yaml)
           flutter create --overwrite .
           
-          # B. 強制寫入我們的地圖程式碼 (覆蓋掉預設的計數器)
+          # 2. 強制寫入正確的 pubspec.yaml 確保依賴存在
+          cat <<EOF > pubspec.yaml
+          name: megaroute_app
+          description: "A new Flutter project."
+          publish_to: 'none'
+          version: 1.0.0+1
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+            flutter_map: ^7.0.2
+            latlong2: ^0.9.1
+            cupertino_icons: ^1.0.6
+          dev_dependencies:
+            flutter_test:
+              sdk: flutter
+            flutter_lints: ^3.0.0
+          flutter:
+            uses-material-design: true
+          EOF
+          
+          # 3. 寫入地圖程式碼
           cat <<EOF > lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:flutter_map/flutter_map.dart';
@@ -44,7 +66,7 @@ jobs:
           }
           EOF
           
-          # C. 執行編譯
+          # 4. 執行編譯
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
           mkdir -p output
