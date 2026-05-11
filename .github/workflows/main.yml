@@ -8,15 +8,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Rebuild and Patch
+      - name: Hard Reset Dependencies and Build
         run: |
-          # 1. 先初始化專案結構 (這會產生預設的 pubspec.yaml)
+          # 1. 建立專案
           flutter create --overwrite .
           
-          # 2. 強制寫入正確的 pubspec.yaml 確保依賴存在
+          # 2. 強制寫入 pubspec (微調版本號觸發刷新)
           cat <<EOF > pubspec.yaml
           name: megaroute_app
-          description: "A new Flutter project."
+          description: "MegaRoute Project"
           publish_to: 'none'
           version: 1.0.0+1
           environment:
@@ -24,8 +24,8 @@ jobs:
           dependencies:
             flutter:
               sdk: flutter
-            flutter_map: ^7.0.2
-            latlong2: ^0.9.1
+            flutter_map: 7.0.2
+            latlong2: 0.9.1
             cupertino_icons: ^1.0.6
           dev_dependencies:
             flutter_test:
@@ -35,7 +35,7 @@ jobs:
             uses-material-design: true
           EOF
           
-          # 3. 寫入地圖程式碼
+          # 3. 寫入程式碼
           cat <<EOF > lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:flutter_map/flutter_map.dart';
@@ -66,8 +66,11 @@ jobs:
           }
           EOF
           
-          # 4. 執行編譯
+          # 4. 強力刷新套件 (這是解決 "No such file or directory" 的關鍵)
+          flutter pub cache clean --force
           flutter pub get
+          
+          # 5. 編譯
           flutter build apk --release --no-tree-shake-icons
           mkdir -p output
           cp build/app/outputs/flutter-apk/app-release.apk output/megaroute.apk
