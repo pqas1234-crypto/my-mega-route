@@ -8,9 +8,18 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Hard Reset Dependencies and Build
+      - name: Force Rebuild Android Project
         run: |
-          # 1. 修正 pubspec.yaml (補回 latlong2 並優化 flutter_map 版本)
+          # 1. 徹底刪除損壞的配置，只保留原始碼和設定
+          rm -rf android ios windows macos linux web .metadata
+          
+          # 2. 重新生成原生平台文件 (這會解決 Unsupported Gradle 問題)
+          flutter create --overwrite .
+          
+          # 3. 補回網路權限
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+
+          # 4. 重新寫入 pubspec.yaml
           cat <<EOF > pubspec.yaml
           name: megaroute_app
           version: 1.0.0+1
@@ -20,13 +29,13 @@ jobs:
           dependencies:
             flutter:
               sdk: flutter
-            flutter_map: ^7.0.2  
+            flutter_map: ^7.0.2
             latlong2: ^0.9.1
           flutter:
             uses-material-design: true
           EOF
 
-          # 2. 修正 main.dart (恢復正統 Import)
+          # 5. 重新寫入 main.dart (確保代碼乾淨)
           cat <<EOF > lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:flutter_map/flutter_map.dart';
@@ -36,14 +45,12 @@ jobs:
 
           class MegaRouteApp extends StatelessWidget {
             const MegaRouteApp({super.key});
-
             @override
             Widget build(BuildContext context) {
               return Scaffold(
-                appBar: AppBar(title: const Text('MegaRoute Map Fix')),
+                appBar: AppBar(title: const Text('MegaRoute Map Final')),
                 body: FlutterMap(
                   options: MapOptions(
-                    // 這裡移除 const，讓它能正確讀取 latlong2 的類別
                     initialCenter: LatLng(25.0337, 121.5646),
                     initialZoom: 15.0,
                   ),
@@ -59,19 +66,11 @@ jobs:
           }
           EOF
 
-          # 3. 補回網路權限到既存的 AndroidManifest.xml
-          if [ -f android/app/src/main/AndroidManifest.xml ]; then
-              if ! grep -q "android.permission.INTERNET" android/app/src/main/AndroidManifest.xml; then
-                  sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
-              fi
-          fi
-
-          # 4. 強力刷新依賴 (關鍵動作)
+          # 6. 編譯
           flutter pub cache clean --force
           flutter pub get
-          
-          # 5. 編譯
           flutter build apk --release --no-tree-shake-icons
+          
           mkdir -p output
           cp build/app/outputs/flutter-apk/app-release.apk output/megaroute.apk
           
