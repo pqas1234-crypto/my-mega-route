@@ -8,16 +8,16 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Ultimate Build (No-Dependency Mode)
+      - name: Final Map Fix
         run: |
-          # 1. 初始化專案
           flutter create --overwrite .
           
-          # 2. 修改 pubspec.yaml (使用最基礎配置，暫時移除 latlong2 依賴，改用純代碼)
+          # 1. 補回網路權限設定 (解決灰屏關鍵)
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+
+          # 2. 寫入 pubspec.yaml
           cat <<EOF > pubspec.yaml
           name: megaroute_app
-          description: "MegaRoute Project"
-          publish_to: 'none'
           version: 1.0.0+1
           environment:
             sdk: '>=3.0.0 <4.0.0'
@@ -25,51 +25,32 @@ jobs:
             flutter:
               sdk: flutter
             flutter_map: 7.0.2
-            cupertino_icons: ^1.0.6
-          dev_dependencies:
-            flutter_test:
-              sdk: flutter
-            flutter_lints: ^3.0.0
+            latlong2: 0.9.1
           flutter:
             uses-material-design: true
           EOF
 
-          # 3. 寫入 main.dart (直接在檔案內定義 LatLng 類別，完全不依賴外部 latlong2 套件)
+          # 3. 寫入 main.dart (使用 HTTPS 確保連線不被封鎖)
           cat <<EOF > lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:flutter_map/flutter_map.dart';
+          import 'package:latlong2/latlong2.dart';
 
-          // 直接內置 LatLng 類別，避開套件讀取失敗問題
-          class LatLng {
-            final double latitude;
-            final double longitude;
-            const LatLng(this.latitude, this.longitude);
-          }
-
-          void main() => runApp(const MaterialApp(home: MegaRouteApp()));
-
-          class MegaRouteApp extends StatelessWidget {
-            const MegaRouteApp({super.key});
-            @override
-            Widget build(BuildContext context) {
-              return Scaffold(
-                appBar: AppBar(title: const Text('MegaRoute Map (Stable)')),
-                body: FlutterMap(
-                  options: MapOptions(
-                    // 這裡使用我們自定義的 LatLng
-                    initialCenter: const LatLng(25.0330, 121.5654) as dynamic, 
-                    initialZoom: 13.0,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.megaroute_app',
-                    ),
-                  ],
+          void main() => runApp(MaterialApp(home: Scaffold(
+            appBar: AppBar(title: Text('MegaRoute Map Working')),
+            body: FlutterMap(
+              options: MapOptions(
+                initialCenter: LatLng(25.0337, 121.5646),
+                initialZoom: 15.0,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.megaroute_app',
                 ),
-              );
-            }
-          }
+              ],
+            ),
+          )));
           EOF
 
           # 4. 編譯
