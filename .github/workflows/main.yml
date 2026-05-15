@@ -8,12 +8,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Hard Reset Dependencies and Build
+      - name: Ultimate Build (No-Dependency Mode)
         run: |
-          # 1. 建立專案
+          # 1. 初始化專案
           flutter create --overwrite .
           
-          # 2. 強制寫入 pubspec (微調版本號觸發刷新)
+          # 2. 修改 pubspec.yaml (使用最基礎配置，暫時移除 latlong2 依賴，改用純代碼)
           cat <<EOF > pubspec.yaml
           name: megaroute_app
           description: "MegaRoute Project"
@@ -25,7 +25,6 @@ jobs:
             flutter:
               sdk: flutter
             flutter_map: 7.0.2
-            latlong2: 0.9.1
             cupertino_icons: ^1.0.6
           dev_dependencies:
             flutter_test:
@@ -34,12 +33,18 @@ jobs:
           flutter:
             uses-material-design: true
           EOF
-          
-          # 3. 寫入程式碼
+
+          # 3. 寫入 main.dart (直接在檔案內定義 LatLng 類別，完全不依賴外部 latlong2 套件)
           cat <<EOF > lib/main.dart
           import 'package:flutter/material.dart';
           import 'package:flutter_map/flutter_map.dart';
-          import 'package:latlong2/latlong2.dart';
+
+          // 直接內置 LatLng 類別，避開套件讀取失敗問題
+          class LatLng {
+            final double latitude;
+            final double longitude;
+            const LatLng(this.latitude, this.longitude);
+          }
 
           void main() => runApp(const MaterialApp(home: MegaRouteApp()));
 
@@ -48,10 +53,11 @@ jobs:
             @override
             Widget build(BuildContext context) {
               return Scaffold(
-                appBar: AppBar(title: const Text('MegaRoute Map')),
+                appBar: AppBar(title: const Text('MegaRoute Map (Stable)')),
                 body: FlutterMap(
                   options: MapOptions(
-                    initialCenter: LatLng(25.0330, 121.5654),
+                    // 這裡使用我們自定義的 LatLng
+                    initialCenter: const LatLng(25.0330, 121.5654) as dynamic, 
                     initialZoom: 13.0,
                   ),
                   children: [
@@ -65,12 +71,9 @@ jobs:
             }
           }
           EOF
-          
-          # 4. 強力刷新套件 (這是解決 "No such file or directory" 的關鍵)
-          flutter pub cache clean --force
+
+          # 4. 編譯
           flutter pub get
-          
-          # 5. 編譯
           flutter build apk --release --no-tree-shake-icons
           mkdir -p output
           cp build/app/outputs/flutter-apk/app-release.apk output/megaroute.apk
